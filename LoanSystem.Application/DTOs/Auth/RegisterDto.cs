@@ -14,7 +14,7 @@ namespace LoanSystem.Application.DTOs.Auth
         [Required]
         [MinLength(6)]
         [RegularExpression(@"^(?=.*[A-Z])(?=.*\d).{6,}$", 
-            ErrorMessage = "Password must be at least 6 characters and contain at least one uppercase letter and one digit")]
+            ErrorMessage = "Password must be at least 6 characters and contain at least one uppercase letter and one digit")] //convert to fluent valid
         public string Password { get; set; } = string.Empty;
 
         [Required]

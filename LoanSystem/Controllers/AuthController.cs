@@ -6,19 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 namespace LoanSystem.API.Controllers
 {
     [Route("api/[controller]")]
-    public class AuthController : BaseController
+    public class AuthController(IAuthService authService) : BaseController
     {
-        private readonly IAuthService _authService;
-
-        public AuthController(IAuthService authService)
-        {
-            _authService = authService;
-        }
-
         [HttpPost("register")]
         public async Task<ActionResult<TokenResponseDto>> Register([FromBody] RegisterDto request)
         {
-            var result = await _authService.Register(request);
+            var result = await authService.Register(request);
             
             if (result == null)
             {
@@ -31,7 +24,7 @@ namespace LoanSystem.API.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<TokenResponseDto>> Login([FromBody] LoginDto request)
         {
-            var result = await _authService.Login(request);
+            var result = await authService.Login(request);
 
             if (result == null)
             {

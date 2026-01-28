@@ -8,20 +8,13 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace LoanSystem.API.Controllers
 {
-    public class UserController : BaseController
+    public class UserController(IUserService service) : BaseController
     {
-        private readonly IUserService _service;
-
-        public UserController(IUserService service)
-        {
-            _service = service;
-        }
-
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ApiResponse<List<UserDto>>>> GetAllUsers()
         {
-            var users = await _service.GetAllUseres();
+            var users = await service.GetAllUsers();
             return Ok(ApiResponse<List<UserDto>>.Ok(users));
         }
 
@@ -29,26 +22,15 @@ namespace LoanSystem.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ApiResponse<List<LoanDto>>>> GetAllUserLoans(int userId)
         {
-            var loans = await _service.GetAllLoans(userId);
+            var loans = await service.GetAllLoans(userId);
             return Ok(ApiResponse<List<LoanDto>>.Ok(loans));
-        }
-
-        [HttpPost]
-        [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<ApiResponse<UserDto>>> CreateUser([FromBody] UserRequest request)
-        {
-            if (request is null)
-                return BadRequest(ApiResponse<UserDto>.Fail("Invalid request"));
-
-            var user = await _service.CreateUser(request);
-            return Ok(ApiResponse<UserDto>.Ok(user, "User created successfully"));
         }
 
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ApiResponse<int>>> DeleteUser(int id)
         {
-            var result = await _service.DeleteUser(id);
+            var result = await service.DeleteUser(id);
             if (!result)
                 return NotFound(ApiResponse<bool>.Fail("User not found"));
             
@@ -59,7 +41,7 @@ namespace LoanSystem.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ApiResponse<int>>> UpdateUser(int id, [FromBody] UserRequest request)
         {
-            var result = await _service.UpdateUser(id, request);
+            var result = await service.UpdateUser(id, request);
             if (!result)
                 return NotFound(ApiResponse<bool>.Fail("User not found"));
             

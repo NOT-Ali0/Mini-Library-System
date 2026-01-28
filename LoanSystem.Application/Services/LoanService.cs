@@ -4,19 +4,14 @@ using LoanSystem.Application.Interface;
 using LoanSystem.Application.Requests;
 using LoanSystem.Domain.Entities;
 using LoanSystem.Infrastructure.ApplicationDbContext;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace LoanSystem.Application.Services
 {
-    public class LoanService : ILoanService
+    public class LoanService(ILoanSystemDbContext dbContext) : ILoanService
     {
-        private readonly ILoanSystemDbContext _dbContext;
-
-        public LoanService(ILoanSystemDbContext dbContext)
-        {
-            _dbContext = dbContext;
-        }
-
+        [Authorize(Roles = "Customer")]
         public async Task<LoanDto> CreateLoan(int userId, LoanRequest request)
         {
             var loan = new Loan
@@ -26,10 +21,10 @@ namespace LoanSystem.Application.Services
                 LoanDate = DateTime.UtcNow
             };
 
-            _dbContext.Loan.Add(loan);
-            await _dbContext.SaveChangesAsync();
+            dbContext.Loan.Add(loan);
+            await dbContext.SaveChangesAsync();
 
-            var book = await _dbContext.Book.FindAsync(request.BookId);
+            var book = await dbContext.Book.FindAsync(request.BookId);
 
             return new LoanDto
             {
@@ -41,10 +36,10 @@ namespace LoanSystem.Application.Services
                 ReturnDate = loan.ReturnDate
             };
         }
-
+        [Authorize(Roles = "Customer")]
         public async Task<PaginatedList<LoanDto>> GetLoansPaginated(int pageNumber, int pageSize)
         {
-            var query = _dbContext.Loan
+            var query = dbContext.Loan
                 .Include(l => l.Book)
                 .Select(l => new LoanDto
                 {
@@ -58,10 +53,10 @@ namespace LoanSystem.Application.Services
 
             return await PaginatedList<LoanDto>.CreateAsync(query, pageNumber, pageSize);
         }
-
+        [Authorize(Roles = "Customer")]
         public async Task<List<LoanDto>> GetUserLoans(int userId)
         {
-            return await _dbContext.Loan
+            return await dbContext.Loan
                 .Where(l => l.UserId == userId)
                 .Include(l => l.Book)
                 .Select(l => new LoanDto

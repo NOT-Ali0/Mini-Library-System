@@ -3,32 +3,27 @@ using LoanSystem.Application.Interface;
 using LoanSystem.Application.Requests;
 using LoanSystem.Domain.Entities;
 using LoanSystem.Infrastructure.ApplicationDbContext;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace LoanSystem.Application.Services
 {
-    public class UserService : IUserService
+    public class UserService(ILoanSystemDbContext dbContext) : IUserService
     {
-        private readonly ILoanSystemDbContext _dbContext;
-
-        public UserService(ILoanSystemDbContext dbContext)
+        [Authorize(Roles = "Admin")]
+        public async Task<List<UserDto>> GetAllUsers()
         {
-            _dbContext = dbContext;
-        }
-
-        public async Task<List<UserDto>> GetAllUseres()
-        {
-            return await _dbContext.User.Select(u => new UserDto
+            return await dbContext.User.Select(u => new UserDto
             {
                 Id = u.Id,
                 Name = u.Name,
                 Email = u.Email
             }).ToListAsync();
         }
-
+        [Authorize(Roles ="Customer")]
         public async Task<List<LoanDto>> GetAllLoans(int UserId)
         {
-            return await _dbContext.Loan
+            return await dbContext.Loan
                 .Where(l => l.UserId == UserId)
                 .Include(l => l.Book)
                 .Select(l => new LoanDto
@@ -42,26 +37,11 @@ namespace LoanSystem.Application.Services
                 }).ToListAsync();
         }
 
-        public async Task<UserDto> CreateUser(UserRequest request)
-        {
-            var newUser = new User()
-            {
-                Name = request.Name.Trim(),
-            };
-
-            _dbContext.User.Add(newUser);
-            await _dbContext.SaveChangesAsync();
-
-            return new UserDto
-            {
-                Id = newUser.Id,
-                Name = request.Name.Trim()
-            };
-        }
-
+        
+        [Authorize(Roles ="Admin")]
         public async Task<bool> DeleteUser(int id)
         {
-            var user = await _dbContext.User.FirstOrDefaultAsync(u => u.Id == id);
+            var user = await dbContext.User.FirstOrDefaultAsync(u => u.Id == id);
 
             if (user is null)
                 return false;
@@ -69,19 +49,19 @@ namespace LoanSystem.Application.Services
             user.IsDeleted = true;
             user.DeletedAt = DateTime.UtcNow;
             
-            await _dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync();
             return true;
         }
-
+        [Authorize(Roles = "Admin")]
         public async Task<bool> UpdateUser(int id, UserRequest request)
         {
-            var user = await _dbContext.User.FirstOrDefaultAsync(_ => _.Id == id);
+            var user = await dbContext.User.FirstOrDefaultAsync(_ => _.Id == id);
             if (user is null)
                 return false;
 
             user.Name = request.Name;
-            _dbContext.User.Update(user);
-            await _dbContext.SaveChangesAsync();
+            dbContext.User.Update(user);
+            await dbContext.SaveChangesAsync();
 
             return true;
         }

@@ -12,20 +12,11 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace LoanSystem.Application.Services
 {
-    public class AuthService : IAuthService
+    public class AuthService(ILoanSystemDbContext dbContext, IConfiguration configuration) : IAuthService
     {
-        private readonly ILoanSystemDbContext _dbContext;
-        private readonly IConfiguration _configuration;
-
-        public AuthService(ILoanSystemDbContext dbContext, IConfiguration configuration)
-        {
-            _dbContext = dbContext;
-            _configuration = configuration;
-        }
-
         public async Task<TokenResponseDto?> Register(RegisterDto request)
         {
-            var existingUser = await _dbContext.User
+            var existingUser = await dbContext.User
                 .FirstOrDefaultAsync(u => u.Email == request.Email);
 
             if (existingUser != null)
@@ -45,8 +36,8 @@ namespace LoanSystem.Application.Services
                 Role = role
             };
 
-            _dbContext.User.Add(user);
-            await _dbContext.SaveChangesAsync();
+            dbContext.User.Add(user);
+            await dbContext.SaveChangesAsync();
 
             return new TokenResponseDto
             {
@@ -56,7 +47,7 @@ namespace LoanSystem.Application.Services
 
         public async Task<TokenResponseDto?> Login(LoginDto request)
         {
-            var user = await _dbContext.User
+            var user = await dbContext.User
                 .FirstOrDefaultAsync(u => u.Email == request.Email);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
@@ -73,7 +64,7 @@ namespace LoanSystem.Application.Services
         private string GenerateToken(User user)
         {
             var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "SuperSecretKeyForJwtAuthentication123!"));
+                Encoding.UTF8.GetBytes(configuration["Jwt:Key"] ?? "SuperSecretKeyForJwtAuthentication123!"));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var claims = new[]
@@ -84,8 +75,8 @@ namespace LoanSystem.Application.Services
             };
 
             var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"] ?? "LoanSystem",
-                audience: _configuration["Jwt:Audience"] ?? "LoanSystem",
+                issuer: configuration["Jwt:Issuer"],
+                audience: configuration["Jwt:Audience"],
                 claims: claims,
                 expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: credentials

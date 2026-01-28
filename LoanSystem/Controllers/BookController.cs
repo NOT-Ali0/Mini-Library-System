@@ -5,23 +5,25 @@ using LoanSystem.Application.Interface;
 using LoanSystem.Application.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace LoanSystem.API.Controllers
 {
-    public class BookController : BaseController
+    public class BookController(IBookService service) : BaseController
     {
-        private readonly IBookService _service;
-
-        public BookController(IBookService service)
-        {
-            _service = service;
-        }
-
         [HttpGet]
         public async Task<ActionResult<ApiResponse<List<BookDto>>>> GetAllBooks()
         {
-            var books = await _service.GetAllBooks();
-            return Ok(ApiResponse<List<BookDto>>.Ok(books));
+            var sw = Stopwatch.StartNew();
+
+            
+
+            
+            var books = await service.GetAllBooks();
+            sw.Stop();
+            var result = ApiResponse<List<BookDto>>.Ok(books);
+            return Ok( new { result , responseTimeMs = sw.ElapsedMilliseconds });
         }
 
         [HttpGet("paginated")]
@@ -29,7 +31,7 @@ namespace LoanSystem.API.Controllers
             [FromQuery] int pageNumber = 1, 
             [FromQuery] int pageSize = 10)
         {
-            var books = await _service.GetBooksPaginated(pageNumber, pageSize);
+            var books = await service.GetBooksPaginated(pageNumber, pageSize);
             if (books is null)
                 return BadRequest();
             return Ok(ApiResponse<PaginatedList<BookDto>>.Ok(books));
@@ -39,7 +41,7 @@ namespace LoanSystem.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ApiResponse<BookDto>>> CreateBook([FromBody] BookRequest request)
         {
-            var book = await _service.CreateBook(request);
+            var book = await service.CreateBook(request);
             return Ok(ApiResponse<BookDto>.Ok(book, "Book created successfully"));
         }
 
@@ -47,7 +49,7 @@ namespace LoanSystem.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ApiResponse<int>>> DeleteBook(int id)
         {
-            var result = await _service.DeleteBook(id);
+            var result = await service.DeleteBook(id);
             if (!result)
                 return NotFound(ApiResponse<bool>.Fail("Book not found"));
             
@@ -58,7 +60,7 @@ namespace LoanSystem.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ApiResponse<int>>> UpdateBook(int id, [FromBody] BookRequest request)
         {
-            var result = await _service.UpdateBook(id, request);
+            var result = await service.UpdateBook(id, request);
             if (!result)
                 return NotFound(ApiResponse<bool>.Fail("Book not found"));
             

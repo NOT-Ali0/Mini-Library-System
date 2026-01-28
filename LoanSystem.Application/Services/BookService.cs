@@ -4,32 +4,26 @@ using LoanSystem.Application.Interface;
 using LoanSystem.Application.Requests;
 using LoanSystem.Domain.Entities;
 using LoanSystem.Infrastructure.ApplicationDbContext;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace LoanSystem.Application.Services
 {
-    public class BookService : IBookService
+    public class BookService(ILoanSystemDbContext dbContext, ICacheService cacheService) : IBookService
     {
-        private readonly ILoanSystemDbContext _dbContext;
-        private readonly ICacheService _cacheService;
         private const string AllBooksCacheKey = "books_all";
 
-        public BookService(ILoanSystemDbContext dbContext, ICacheService cacheService)
-        {
-            _dbContext = dbContext;
-            _cacheService = cacheService;
-        }
-
+        [Authorize("Admin")]
         public async Task<BookDto> CreateBook(BookRequest request)
         {
             var newBook = new Book()
             {
                 Title = request.Title,
             };
-            _dbContext.Book.Add(newBook);
-            await _dbContext.SaveChangesAsync();
+            dbContext.Book.Add(newBook);
+            await dbContext.SaveChangesAsync();
             
-            _cacheService.Remove(AllBooksCacheKey);
+            cacheService.Remove(AllBooksCacheKey);
             
             return new BookDto
             {
@@ -37,45 +31,45 @@ namespace LoanSystem.Application.Services
                 Title = request.Title
             };
         }
-
+        [Authorize("Admin")]
         public async Task<bool> DeleteBook(int id)
         {
-            var book = await _dbContext.Book.FirstOrDefaultAsync(b => b.Id == id);
+            var book = await dbContext.Book.FirstOrDefaultAsync(b => b.Id == id);
             if (book is null)
                 return false;
             
             book.IsDeleted = true;
             book.DeletedAt = DateTime.UtcNow;
             
-            await _dbContext.SaveChangesAsync();
-            _cacheService.Remove(AllBooksCacheKey);
+            await dbContext.SaveChangesAsync();
+            cacheService.Remove(AllBooksCacheKey);
             
             return true;
         }
-
+        [Authorize("Customer")]
         public async Task<List<BookDto>> GetAllBooks()
         {
-            var cached = _cacheService.Get<List<BookDto>>(AllBooksCacheKey);
+            var cached = cacheService.Get<List<BookDto>>(AllBooksCacheKey);
             if (cached != null)
             {
                 return cached;
             }
 
-            var books = await _dbContext.Book
+            var books = await dbContext.Book
                 .Select(b => new BookDto
                 {
                     Id = b.Id,
                     Title = b.Title
                 }).ToListAsync();
 
-            _cacheService.Set(AllBooksCacheKey, books, 30);
+            cacheService.Set(AllBooksCacheKey, books, 30);
             
             return books;
         }
-
+        [Authorize("Customer")]
         public async Task<PaginatedList<BookDto>> GetBooksPaginated(int pageNumber, int pageSize)
         {
-            var query = _dbContext.Book
+            var query = dbContext.Book
                 .Select(b => new BookDto
                 {
                     Id = b.Id,
@@ -84,18 +78,18 @@ namespace LoanSystem.Application.Services
 
             return await PaginatedList<BookDto>.CreateAsync(query, pageNumber, pageSize);
         }
-
+        [Authorize("Admin")]
         public async Task<bool> UpdateBook(int id, BookRequest request)
         {
-            var book = await _dbContext.Book.FirstOrDefaultAsync(b => b.Id == id);
+            var book = await dbContext.Book.FirstOrDefaultAsync(b => b.Id == id);
             if (book is null)
                 return false;
 
             book.Title = request.Title;
 
-            _dbContext.Book.Update(book);
-            await _dbContext.SaveChangesAsync();
-            _cacheService.Remove(AllBooksCacheKey);
+            dbContext.Book.Update(book);
+            await dbContext.SaveChangesAsync();
+            cacheService.Remove(AllBooksCacheKey);
 
             return true;
         }

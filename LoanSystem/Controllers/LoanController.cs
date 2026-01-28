@@ -9,15 +9,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace LoanSystem.API.Controllers
 {
-    public class LoanController : BaseController
+    public class LoanController(ILoanService service) : BaseController
     {
-        private readonly ILoanService _service;
-
-        public LoanController(ILoanService service)
-        {
-            _service = service;
-        }
-
         [HttpPost]
         [Authorize]
         public async Task<ActionResult<ApiResponse<LoanDto>>> CreateLoan([FromBody] LoanRequest request)
@@ -28,7 +21,7 @@ namespace LoanSystem.API.Controllers
                 return Unauthorized(ApiResponse<LoanDto>.Fail("User not authenticated"));
             }
 
-            var loan = await _service.CreateLoan(userId, request);
+            var loan = await service.CreateLoan(userId, request);
             return Ok(ApiResponse<LoanDto>.Ok(loan, "Loan created successfully"));
         }
 
@@ -38,7 +31,7 @@ namespace LoanSystem.API.Controllers
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10)
         {
-            var loans = await _service.GetLoansPaginated(pageNumber, pageSize);
+            var loans = await service.GetLoansPaginated(pageNumber, pageSize);
             if (loans is null)
                 return BadRequest();
             return Ok(ApiResponse<PaginatedList<LoanDto>>.Ok(loans));
@@ -54,7 +47,7 @@ namespace LoanSystem.API.Controllers
                 return Unauthorized(ApiResponse<List<LoanDto>>.Fail("User not authenticated"));
             }
 
-            var loans = await _service.GetUserLoans(userId);
+            var loans = await service.GetUserLoans(userId);
             return Ok(ApiResponse<List<LoanDto>>.Ok(loans));
         }
     }

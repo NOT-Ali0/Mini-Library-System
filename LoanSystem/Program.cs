@@ -53,8 +53,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "LoanSystem",
-            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "LoanSystem",
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "SuperSecretKeyForJwtAuthentication123!"))
         };
@@ -77,7 +77,7 @@ builder.Services.AddAppDI();
 //    options.UseNpgsql(connectionString);
 //});
 
-builder.Services.AddDbContext<LoanSystemDbContext>(options =>
+builder.Services.AddDbContext<ILoanSystemDbContext,LoanSystemDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
@@ -85,6 +85,7 @@ builder.Services.AddDbContext<LoanSystemDbContext>(options =>
 //builder.WebHost.UseUrls("http://0.0.0.0:5000");
 
 var app = builder.Build();
+
 
 
 // test auto read !!
