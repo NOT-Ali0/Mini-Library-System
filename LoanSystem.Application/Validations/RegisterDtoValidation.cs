@@ -8,13 +8,17 @@ using System.Threading.Tasks;
 
 namespace LoanSystem.Application.Validations
 {
-    public class RoleValidation : AbstractValidator<RegisterDto>
+    public class RegisterDtoValidation : AbstractValidator<RegisterDto>
     {
-        public RoleValidation()
+        public RegisterDtoValidation()
         {
             RuleFor(u => u.Role)
                 .Matches("^(Customer|Admin)$")
                 .WithMessage("The Role must be ether Admin Or Customer");
+            RuleFor(x => x.Password)
+                .MinimumLength(8)
+                .Matches("[A-Z]").WithMessage("Password must contain at least one uppercase letter.")
+                .Matches(@"\d").WithMessage("Password must contain at least one number.");
         }
     }
 }

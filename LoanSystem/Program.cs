@@ -64,36 +64,16 @@ builder.Services.AddAuthorization();
 builder.Services.AddAppDI();
 
 
-// test configurations 
-//using env for test
-//builder.Services.AddDbContext<LoanSystemDbContext>(options =>
-//{
-//    var host = Environment.GetEnvironmentVariable("PGHOST");
-//    var port = Environment.GetEnvironmentVariable("PGPORT");
-//    var database = Environment.GetEnvironmentVariable("PGDATABASE");
-//    var user = Environment.GetEnvironmentVariable("PGUSER");
-//    var password = Environment.GetEnvironmentVariable("PGPASSWORD");
-//    var connectionString = $"Host={host};Port={port};Database={database};Username={user};Password={password}";
-//    options.UseNpgsql(connectionString);
-//});
+
 
 builder.Services.AddDbContext<ILoanSystemDbContext,LoanSystemDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
-//builder.WebHost.UseUrls("http://0.0.0.0:5000");
 
 var app = builder.Build();
 
-
-
-// test auto read !!
-//using (var scope = app.Services.CreateScope())
-//{
-//    var db = scope.ServiceProvider.GetRequiredService<LoanSystemDbContext>();
-//    db.Database.Migrate();
-//}
 
 if (app.Environment.IsDevelopment())
 {
@@ -101,9 +81,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseRequestLogging();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRequestLogging();
 
 app.MapControllers();
 
